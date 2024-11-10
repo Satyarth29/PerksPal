@@ -12,14 +12,6 @@ import java.time.LocalDateTime;
 
 @SpringBootApplication
 public class PerksPalApplication {
-private final RetailTransactionRepository retailTransactionRepository;
-private final CustomerRepository customerRepository;
-
-	public PerksPalApplication(RetailTransactionRepository retailTransactionRepository, CustomerRepository customerRepository) {
-		this.retailTransactionRepository = retailTransactionRepository;
-		this.customerRepository = customerRepository;
-	}
-
 	public static void main(String[] args) {
 		SpringApplication.run(PerksPalApplication.class, args);
 	}

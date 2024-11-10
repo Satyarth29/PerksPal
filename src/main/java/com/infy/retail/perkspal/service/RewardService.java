@@ -9,6 +9,7 @@ import com.infy.retail.perkspal.respository.RewardRepository;
 import com.infy.retail.perkspal.respository.RetailTransactionRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,9 +28,33 @@ public class RewardService {
         this.customerRepository = customerRepository;
     }
 
-    public Map<String,Double> getRewardsPerMonth(Long id) throws PerksPalException {
-                    calculateRewards(id);
-                    Map<String,Double> rewardsPerMonth = new HashMap<>();
+    public Map<Month, Integer> getRewardsPerMonth(Long id) throws PerksPalException {
+        calculateRewards(id);
+        Map<Month, Integer> rewardsPerMonthMap = new HashMap<>();
+        List<Reward> rewardList = getRewardsList(id);
+        for (Reward reward : rewardList) {
+            Month month = reward.getDate().getMonth();
+            Integer points = reward.getPoints();
+            rewardsPerMonthMap.merge(month, points, Integer::sum);
+        }
+        return rewardsPerMonthMap;
+    }
+
+    public Integer getAllRewards(Long id) throws PerksPalException {
+        calculateRewards(id);
+        List<Reward> rewardList = getRewardsList(id);
+        Integer totalPoints = rewardList.stream().mapToInt(Reward::getPoints)
+                .sum();
+        return totalPoints;
+    }
+
+    private List<Reward> getRewardsList(Long id) {
+        List<Reward> rewardList = rewardRepository.findAllByCustomerId(id);
+        return rewardList;
+    }
+
+
+    private void calculateRewards(Long id) throws PerksPalException {
         Customer customer = customerRepository.findById(id).orElseThrow();
         customer.getRetailTransactions().forEach(
                 transactionStream -> {
@@ -42,16 +67,8 @@ public class RewardService {
         );
     }
 
-    public Double getAllRewards(Long id){
 
-    }
-
-    private void calculateRewards(Long id) throws PerksPalException {
-
-    }
-
-
-    private  int calculatePoints(double price) {
+    private int calculatePoints(double price) {
         int points = 0;
         if (price > 100) {
             points += (price - 100) * 2 + 50;

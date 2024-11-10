@@ -19,7 +19,6 @@ public class RetailTransaction {
     private Long id;
     @ManyToOne
     @JoinColumn(name = "CUSTOMER_ID")
-    @Column(name = "CUSTOMER")
     private Customer customer;
     @Column(name = "PRICE($)")
     private Double price;

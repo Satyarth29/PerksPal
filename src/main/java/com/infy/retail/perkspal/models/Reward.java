@@ -21,7 +21,6 @@ public class Reward {
     private Integer points;
     @Column(name = "DATE")
     private LocalDate date;
-    @Column(name = "CUSTOMER")
     @ManyToOne
     @JoinColumn(name = "CUSTOMER_ID")
     private Customer customer;
