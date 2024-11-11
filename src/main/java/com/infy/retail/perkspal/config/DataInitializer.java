@@ -44,8 +44,11 @@ public class DataInitializer {
             retailTransaction3.setDate(LocalDate.of(2024, 9, 25));
             retailTransaction3.setPrice(150.0);
             retailTransaction4.setCustomer(customer2);
-            retailTransaction4.setDate( LocalDate.of(2024, 11, 5));
+            retailTransaction4.setDate(LocalDate.of(2024, 11, 5));
             retailTransaction4.setPrice(45.0);
+            RetailTransaction retailTransaction5 = new RetailTransaction();
+            retailTransaction5.setDate(LocalDate.of(2024,9,14));
+            retailTransaction5.setPrice(100.0);
 
             //saving all transactions
             transactionRepository.saveAll(List.of(
