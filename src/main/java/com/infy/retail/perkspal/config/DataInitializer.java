@@ -32,7 +32,7 @@ public class DataInitializer {
         return args -> {
             // Create customers
             Customer customer1 = new Customer();
-            customer1.setName("swati");
+            customer1.setName("sharma");
             customer1 = customerService.saveCustomer(customer1);
 
             Customer customer2 = new Customer();
