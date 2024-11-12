@@ -31,5 +31,4 @@ public class RewardController {
         return ResponseEntity.ok(totalRewards);
     }
 
-
 }

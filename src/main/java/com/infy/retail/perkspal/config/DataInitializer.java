@@ -2,30 +2,42 @@ package com.infy.retail.perkspal.config;
 
 import com.infy.retail.perkspal.models.Customer;
 import com.infy.retail.perkspal.models.RetailTransaction;
-import com.infy.retail.perkspal.respository.CustomerRepository;
-import com.infy.retail.perkspal.respository.RetailTransactionRepository;
-import jakarta.transaction.Transaction;
+import com.infy.retail.perkspal.service.CustomerService;
+import com.infy.retail.perkspal.service.RewardService;
+import com.infy.retail.perkspal.service.TransactionService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
+
+import static com.infy.retail.perkspal.utils.CommonUtils.calculateRewards;
 
 @Configuration
 public class DataInitializer {
+    private final CustomerService customerService;
+    private final RewardService rewardService;
+    private final TransactionService transactionService;
+
+    public DataInitializer(CustomerService customerService, RewardService rewardService, TransactionService transactionService) {
+        this.customerService = customerService;
+        this.rewardService = rewardService;
+        this.transactionService = transactionService;
+    }
+
+
     @Bean
-    CommandLineRunner initDatabase(CustomerRepository customerRepository, RetailTransactionRepository transactionRepository) {
+    CommandLineRunner initDatabase() {
         return args -> {
             // Create customers
             Customer customer1 = new Customer();
             customer1.setName("swati");
-            customer1 = customerRepository.save(customer1);
+            customer1 = customerService.saveCustomer(customer1);
 
             Customer customer2 = new Customer();
             customer2.setName("satyarth");
-            customer2 = customerRepository.save(customer2);
+            customer2 = customerService.saveCustomer(customer2);
 
             // Create transactions for customer 1
             RetailTransaction retailTransaction1 = new RetailTransaction();
@@ -47,16 +59,21 @@ public class DataInitializer {
             retailTransaction4.setDate(LocalDate.of(2024, 11, 5));
             retailTransaction4.setPrice(45.0);
             RetailTransaction retailTransaction5 = new RetailTransaction();
-            retailTransaction5.setDate(LocalDate.of(2024,9,14));
+            retailTransaction5.setDate(LocalDate.of(2024, 9, 14));
             retailTransaction5.setPrice(100.0);
 
             //saving all transactions
-            transactionRepository.saveAll(List.of(
+            transactionService.saveAllTransactions(List.of(
                     retailTransaction1,
                     retailTransaction2,
                     retailTransaction3,
                     retailTransaction4
             ));
+            calculateRewards(customerService,rewardService);
         };
     }
+
+
+
+
 }
