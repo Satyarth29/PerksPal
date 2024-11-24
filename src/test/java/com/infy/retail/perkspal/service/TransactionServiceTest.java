@@ -1,6 +1,6 @@
 package com.infy.retail.perkspal.service;
 
-import com.infy.retail.perkspal.dto.CustomerDTO;
+import com.infy.retail.perkspal.dto.CustomerRequestDTO;
 import com.infy.retail.perkspal.exceptions.PerksPalException;
 import com.infy.retail.perkspal.models.Customer;
 import com.infy.retail.perkspal.models.RetailTransaction;
@@ -8,19 +8,18 @@ import com.infy.retail.perkspal.respository.RetailTransactionRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.springframework.http.RequestEntity.post;
 
 class TransactionServiceTest {
     @Mock
@@ -34,29 +33,30 @@ class TransactionServiceTest {
     @InjectMocks
     private TransactionService transactionService;
 
-    private CustomerDTO customerDTO;
+    private CustomerRequestDTO customerRequestDTO;
     private Customer customer;
     private RetailTransaction transaction;
 
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        customerDTO = new CustomerDTO("John Doe", 120.0, LocalDate.of(2024, 11, 8));
+        customerRequestDTO = new CustomerRequestDTO("John Doe", 120.0, LocalDate.of(2024, 11, 8));
         customer = new Customer();
-        customer.setName(customerDTO.name());
+        customer.setName(customerRequestDTO.name());
         transaction = new RetailTransaction();
-        transaction.setDate(customerDTO.date());
-        transaction.setPrice(customerDTO.price());
+        transaction.setDate(customerRequestDTO.date());
+        transaction.setPrice(customerRequestDTO.price());
         transaction.setCustomer(customer);
+        customer.setRetailTransactions(List.of(transaction));
     }
 
     @Test
     public void saveTransaction_PositiveFlow() throws PerksPalException {
         when(customerService.saveCustomer(any(Customer.class))).thenReturn(customer);
         when(transactionRepository.save(any(RetailTransaction.class))).thenReturn(transaction);
-        doNothing().when(entityManager).refresh(any(Customer.class));  // Mock refresh
+        doNothing().when(entityManager).refresh(customer);  // Mock refresh
 
-        transactionService.saveTransaction(customerDTO);
+        transactionService.saveTransaction(customerRequestDTO);
 
         verify(customerService, times(1)).saveCustomer(any(Customer.class));  // Ensure saveCustomer was called once
         verify(transactionRepository, times(1)).save(any(RetailTransaction.class));  // Ensure save was called once
@@ -66,11 +66,11 @@ class TransactionServiceTest {
     @Test
     public void testSaveTransaction_ThrowsPerks_Pal_Exception_When_Customer_Is_Empty() {
         // Arrange
-        CustomerDTO customerDTO = null;
+        CustomerRequestDTO customerRequestDTO = null;
 
         // Act & Assert
         Exception exception = assertThrows(PerksPalException.class, () -> {
-            transactionService.saveTransaction(customerDTO);
+            transactionService.saveTransaction(customerRequestDTO);
         });
 
         // Verify the exception message
@@ -81,8 +81,10 @@ class TransactionServiceTest {
     public void saveTransaction_NegativeFlow_SaveFails() throws PerksPalException {
         when(customerService.saveCustomer(any(Customer.class))).thenThrow(new RuntimeException("Database error"));
         PerksPalException exception = assertThrows(PerksPalException.class, () -> {
-            transactionService.saveTransaction(customerDTO);
+            transactionService.saveTransaction(customerRequestDTO);
         });
         assertEquals("Database error", exception.getMessage());
     }
+
+
 }

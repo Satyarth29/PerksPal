@@ -8,23 +8,18 @@ Award points are based on purchase amounts.
 
 Calculate rewards for each customer per month and total.
 
-RESTful endpoints for creating and managing customers and transactions.
+RESTful's endpoints for creating and managing customers and transactions.
 
 Global exception handling for robust error management.
 
 ### Technologies Used
 
-Java 17
-
-Spring Boot
-
-Spring Data JPA
-
-MySQL
-
-JUnit 5
-
-Mockito
+* Java 17
+* Spring Boot
+* Spring Data JPA
+* MySQL
+* JUnit 5
+* Mockito
 
 ### Getting Started
 
@@ -36,13 +31,15 @@ Maven
 
 MySQL
 
-#### #Installation
+#### Installation
 
 **Clone the repository:**
 
 **bash**
-git clone https://github.com/Satyarth29/PerksPal.git
-cd PerksPal
+```bash
+git clone https://github.com/Satyarth29/PerksPal.git cd PerksPal
+```
+
 Configure the MySQL database:
 
 Create a database named "perkspal".
@@ -51,56 +48,92 @@ Update the
 src/main/resources/application.properties file with your MySQL credentials:
 
 **properties**
-* spring.datasource.url=jdbc:mysql://localhost:3306/perkspal
-* spring.datasource.username=your_mysql_username
-* spring.datasource.password=your_mysql_password
-* spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
-* spring.jpa.hibernate.ddl-auto=update
-* spring.jpa.database-platform=org.hibernate.dialect.MySQL5Dialect
-
+```
+spring.datasource.url=jdbc:mysql://localhost:3306/perkspal
+spring.datasource.username=your_mysql_username
+spring.datasource.password=your_mysql_password
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.jpa.hibernate.ddl-auto=create
+spring.jpa.database-platform=org.hibernate.dialect.MySQL5Dialect
+```
 #### Build and run the application:
 
 **bash**
+```bash
 mvn spring-boot:run
+```
 
 ### Usage
 
 #### Endpoints
-Create Transaction
+#### BaseURL: 
+```html
+http://localhost:8080
+```
 
-URL: _**/api/transaction/create**_
 
-Method: POST
-
+**_Method1_**: POST
+#### Description: Creates Transaction
+```
+/api/transaction/create
+```
 Request Body:
 
-json
+```json
 {
     "name": "John Doe",
     "price": 520.0,
     "date": "2023-11-08"
 }
-
+```
+**_Note:_**
+no need to create the transaction to test the GET methods at first since some data is preloaded
 #### Calculate Rewards 
 
-**_per month_**
 
-URL: _/api/rewards/calculate/month/{customerID}_
+**_Method2_**: **GET**
+#### Description: **gets a customer rewards points based on ID and Start and End Date. Dates can be presented in any format in URL after writing the format in the configuration file if not already present . _**
 
-Method: **GET**
-**_all_**
-URL: _/api/rewards/calculate/all/{customerID}_
+```
+/api/rewards/calculate/range/{customerID}?startDate={startDate}&endDate={endDate}
+```
 
-Method: **GET**
 
+**_Method3_**: **GET**
+#### Description: **gets all rewards points for a customer _**
+```
+/api/rewards/calculate/all/{customerID}
+```
+**_Note:_**
+wiggly brackets {} values must be replaced with actual values
 #### Testing:
+
+##### Unit-Testing:
 
 Framework
 Mockito and Junit 5
 Run the tests using Maven:
 
 **bash**
+```bash
 mvn test
+```
+#### Manual-Testing:
+Description: 
+* can be manual tested using postman by pasting URL as mentioned above 
+                          (or)
+* by clicking links mentioned below:
+
+[getAllRewards](http://localhost:8080/api/rewards/calculate/all/1)
+
+[getRewards from a range of dates: startDate=15/08/2024&endDate=2024-10-10 ](http://localhost:8080/api/rewards/calculate/range/1?startDate=15/08/2024&endDate=2024-10-10)
+
+**_Note:_**
+1. _make sure the DB is set and server is running before clicking the links._
+2. _this fetching will be done based on the preloaded data._
+3. to see the preloaded data go to config/dataInitializer class
+
+
 
 ### Project Structure
 

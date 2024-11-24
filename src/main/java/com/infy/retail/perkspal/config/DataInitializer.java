@@ -5,6 +5,8 @@ import com.infy.retail.perkspal.models.RetailTransaction;
 import com.infy.retail.perkspal.service.CustomerService;
 import com.infy.retail.perkspal.service.RewardService;
 import com.infy.retail.perkspal.service.TransactionService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +18,8 @@ import static com.infy.retail.perkspal.utils.CommonUtils.calculateRewards;
 
 @Configuration
 public class DataInitializer {
+    private final Logger dataInitializerLogger = LoggerFactory.getLogger(DataInitializer.class);
+
     private final CustomerService customerService;
     private final RewardService rewardService;
     private final TransactionService transactionService;
@@ -27,17 +31,23 @@ public class DataInitializer {
     }
 
 
+/**
+ * Data Initializer preloads some data so that
+ * the GET API can be used with the start for the application
+ * */
     @Bean
     CommandLineRunner initDatabase() {
         return args -> {
+            dataInitializerLogger.debug("DataInitialization starts");
             // Create customers
             Customer customer1 = new Customer();
-            customer1.setName("sharma");
+            customer1.setName("swati");
             customer1 = customerService.saveCustomer(customer1);
 
             Customer customer2 = new Customer();
             customer2.setName("satyarth");
             customer2 = customerService.saveCustomer(customer2);
+
 
             // Create transactions for customer 1
             RetailTransaction retailTransaction1 = new RetailTransaction();
@@ -69,7 +79,8 @@ public class DataInitializer {
                     retailTransaction3,
                     retailTransaction4
             ));
-            calculateRewards(customerService,rewardService);
+            dataInitializerLogger.debug("DataInitialization ends");
+            calculateRewards(customerService.findAllCustomers(),rewardService);
         };
     }
 

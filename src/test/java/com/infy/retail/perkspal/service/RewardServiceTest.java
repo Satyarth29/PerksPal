@@ -1,5 +1,6 @@
 package com.infy.retail.perkspal.service;
 
+import com.infy.retail.perkspal.dto.CustomerResponseDTO;
 import com.infy.retail.perkspal.exceptions.PerksPalException;
 import com.infy.retail.perkspal.models.Customer;
 import com.infy.retail.perkspal.models.Reward;
@@ -46,38 +47,36 @@ class RewardServiceTest {
 
     // Positive test case for getRewardsPerMonth
     @Test
-    void getRewardsPerMonth_success() throws PerksPalException {
+    void getRewardsInRangePerMonth_success() throws PerksPalException {
         // Arrange
-
-        when(rewardRepository.findAllByCustomerId(customerId)).thenReturn(rewardList);
-
-        // Expected result
-        Map<Month, Integer> expectedRewards = new HashMap<>();
-        expectedRewards.put(Month.JANUARY, 260);
-        expectedRewards.put(Month.FEBRUARY, 63);
+        Map<String,Integer> totalRewardsMap = new HashMap<>();
+        totalRewardsMap.put(LocalDate.of(2024, Month.FEBRUARY, 15).toString(),63);
+        totalRewardsMap.put(LocalDate.of(2024, Month.JANUARY, 12).toString(),140);
+        totalRewardsMap.put(LocalDate.of(2024, Month.JANUARY, 10).toString(),120);
+        when(rewardRepository.findAllByCustomerIdAndDateBetween(any(),any(),any())).thenReturn(rewardList);
 
         // Act
-        Map<Month, Integer> rewardsPerMonth = rewardService.getRewardsPerMonth(customerId);
+        CustomerResponseDTO customerResponse = rewardService.getRewardsInRange(customerId,LocalDate.of(2024,01,10),LocalDate.of(2024,02,15));
 
         // Assert
-        assertEquals(expectedRewards, rewardsPerMonth);
-        verify(rewardRepository, times(1)).findAllByCustomerId(customerId);
+        assertEquals(new CustomerResponseDTO("satyarth", totalRewardsMap), customerResponse);
+        verify(rewardRepository, times(1)).findAllByCustomerIdAndDateBetween(customerId,LocalDate.of(2024,01,10),LocalDate.of(2024,02,15));
     }
 
     // Negative test case for getRewardsPerMonth - Exception Scenario
     @Test
-    void getRewardsPerMonth_exception() {
+    void getRewardsInRangePerMonth_exception() {
         // Arrange
 
-        when(rewardRepository.findAllByCustomerId(customerId)).thenThrow(new RuntimeException("Database error"));
+        when(rewardRepository.findAllByCustomerIdAndDateBetween(customerId,LocalDate.of(2024,8,20),LocalDate.of(2024,11,20))).thenThrow(new RuntimeException("Database error"));
 
         // Act & Assert
         PerksPalException exception = assertThrows(PerksPalException.class, () ->
-                rewardService.getRewardsPerMonth(customerId)
+                rewardService.getRewardsInRange(customerId,LocalDate.of(2024,8,20),LocalDate.of(2024,11,20))
         );
 
         assertEquals("Database error", exception.getMessage());
-        verify(rewardRepository, times(1)).findAllByCustomerId(customerId);
+        verify(rewardRepository, times(1)).findAllByCustomerIdAndDateBetween(customerId,LocalDate.of(2024,8,20),LocalDate.of(2024,11,20));
     }
 
     // Positive test case for getAllRewards
@@ -86,12 +85,13 @@ class RewardServiceTest {
         // Arrange
 
         when(rewardRepository.findAllByCustomerId(customerId)).thenReturn(rewardList);
-
+        Map<String,Integer> totalRewardsMap = new HashMap<>();
+        totalRewardsMap.put("total Rewards : ",323);
         // Act
-        Integer totalRewards = rewardService.getAllRewards(customerId);
-
+        CustomerResponseDTO totalRewards = rewardService.getAllRewards(customerId);
+        CustomerResponseDTO expectedCusResDTO = new CustomerResponseDTO("satyarth", totalRewardsMap);
         // Assert
-        assertEquals(323, totalRewards);
+        assertEquals(expectedCusResDTO, totalRewards);
         verify(rewardRepository, times(1)).findAllByCustomerId(customerId);
     }
 
@@ -106,13 +106,13 @@ class RewardServiceTest {
                 rewardService.getAllRewards(customerId)
         );
 
-        assertEquals("Database error", exception.getMessage());
+        assertEquals("Error Processing", exception.getMessage());
         verify(rewardRepository, times(1)).findAllByCustomerId(customerId);
     }
 
     // Positive test case for getRewardsList
     @Test
-    void getRewardsList_success() throws PerksPalException {
+    void getRewardsInRangeList_success() throws PerksPalException {
         // Arrange
 
         when(rewardRepository.findAllByCustomerId(customerId)).thenReturn(rewardList);
@@ -128,14 +128,14 @@ class RewardServiceTest {
 
     // Positive test case for saveReward
     @Test
-    void saveReward_success() {
+    void saveAllRewards_success() {
         // Arrange
         Reward reward = new Reward(1L, 110, LocalDate.of(2024, Month.JANUARY, 10), customer);
 
         // Act
-        rewardService.saveReward(reward);
+        rewardService.saveAllRewards(List.of(reward));
 
         // Assert
-        verify(rewardRepository, times(1)).save(reward);
+        verify(rewardRepository, times(1)).saveAll(List.of(reward));
     }
 }
