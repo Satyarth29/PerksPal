@@ -1,6 +1,8 @@
 # **PerksPal**
 
-PerksPal is a rewards program application built using Java 17 and Spring Boot. This project aims to create a RESTful application with endpoints to manage customers, transactions, and rewards. The application's database will store reward information. Additionally, the system will be preloaded with sample data.
+PerksPal is a rewards program application developed using Java 17 and Spring Boot. The goal of this project is to create a RESTful application with endpoints for managing customers, transactions, and rewards. The application's database will store reward information.
+
+Rewards can be retrieved using either a customer ID or by providing a range of dates along with the customer ID through two distinct APIs. The system comes preloaded with sample data. Additionally, new customers can be added using the POST API available in the project.
 
 ### Features
 
