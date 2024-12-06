@@ -2,11 +2,8 @@ package com.infy.retail.perkspal.controller;
 
 import com.infy.retail.perkspal.dto.TransactionPayload;
 import com.infy.retail.perkspal.exceptions.InvalidInputException;
-import com.infy.retail.perkspal.exceptions.TransactionFailedException;
 import com.infy.retail.perkspal.service.TransactionService;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,20 +29,14 @@ public class TransactionController {
      *         is processed successfully.
      * @throws InvalidInputException if the payload is invalid, e.g., missing or null
      *                                id, price.
-     * @throws TransactionFailedException if the transaction fails due to any runtime error
      *                                     during processing.
      *  */
     @PostMapping("/create")
-    public ResponseEntity<String> commitTransaction(@RequestBody TransactionPayload transactionPayload) throws TransactionFailedException {
-       try {
+    public ResponseEntity<String> commitTransaction(@RequestBody TransactionPayload transactionPayload)  {
           log.info("transaction commit started with : {}", transactionPayload);
            if (ObjectUtils.isEmpty(transactionPayload.price()) || ObjectUtils.isEmpty(transactionPayload.id()))
                throw new InvalidInputException("please provide valid ID or price ");
            transactionService.saveTransaction(transactionPayload);
            return ResponseEntity.ok("Transaction completed successfully");
-       }
-       catch (Exception exception){
-           throw new TransactionFailedException("transaction did not commit",exception);
-       }
     }
 }

@@ -1,13 +1,9 @@
 package com.infy.retail.perkspal.service;
 
 import com.infy.retail.perkspal.dto.TransactionPayload;
-import com.infy.retail.perkspal.exceptions.PerksPalException;
-import com.infy.retail.perkspal.exceptions.ResourceNotFoundException;
-import com.infy.retail.perkspal.exceptions.TransactionFailedException;
 import com.infy.retail.perkspal.models.Customer;
 import com.infy.retail.perkspal.models.RetailTransaction;
 import com.infy.retail.perkspal.respository.RetailTransactionRepository;
-import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -73,12 +69,12 @@ class TransactionServiceTest {
         TransactionPayload transactionPayload = null;
 
         // Act & Assert
-        Exception exception = assertThrows(TransactionFailedException.class, () -> {
+        Exception exception = assertThrows(Exception.class, () -> {
             transactionService.saveTransaction(transactionPayload);
         });
 
         // Verify the exception message
-        assertEquals("Transaction did not commit due to :", exception.getMessage());
+        assertEquals("Cannot invoke \"com.infy.retail.perkspal.dto.TransactionPayload.id()\" because \"transactionPayload\" is null", exception.getMessage());
     }
 
     @Test
@@ -86,7 +82,7 @@ class TransactionServiceTest {
         doThrow(new RuntimeException("Transaction did not commit due to :"))
                 .when(transactionRepository).saveAll(anyList());
 
-        TransactionFailedException exception = assertThrows(TransactionFailedException.class, () -> {
+        Exception exception = assertThrows(Exception.class, () -> {
             transactionService.saveAllTransactions(List.of());
         });
         assertEquals("Transaction did not commit due to :", exception.getMessage());
@@ -98,12 +94,12 @@ class TransactionServiceTest {
         when(customerService.findById(transactionPayload.id())).thenReturn(Optional.empty());
 
         // Act & Assert
-        TransactionFailedException exception = assertThrows(TransactionFailedException.class, () -> {
+        Exception exception = assertThrows(Exception.class, () -> {
             transactionService.saveTransaction(transactionPayload);
         });
 
         // Verify the exception message
-        assertEquals("Transaction did not commit due to :", exception.getMessage());
+        assertEquals("Customer Not Found while processing transaction", exception.getMessage());
 
         // Verify interactions
         verify(customerService).findById(transactionPayload.id());

@@ -1,20 +1,15 @@
 package com.infy.retail.perkspal.service;
 
-import com.infy.retail.perkspal.exceptions.PerksPalException;
-import com.infy.retail.perkspal.exceptions.ResourceNotFoundException;
+
 import com.infy.retail.perkspal.models.Customer;
 import com.infy.retail.perkspal.respository.CustomerRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.zip.DataFormatException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;

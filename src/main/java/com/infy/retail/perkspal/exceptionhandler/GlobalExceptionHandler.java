@@ -9,20 +9,16 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<String> handleTypeMismatchException(MethodArgumentTypeMismatchException ex) {
+    @ExceptionHandler(value ={InvalidInputException.class,NullPointerException.class,MethodArgumentTypeMismatchException.class} )
+    public ResponseEntity<String> handleTypeMismatchException(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid input: " + ex.getMessage());
     }
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<String> handleResourceNotFoundException(ResourceNotFoundException resourceNotFoundException){
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(resourceNotFoundException.getMessage());
     }
-    @ExceptionHandler(value ={InvalidInputException.class,RewardsCalculationException.class,NullPointerException.class} )
-    public ResponseEntity<String> handleCustomRuntimeExceptions(RuntimeException exception){
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<String> handleCustomRuntimeExceptions(Exception exception){
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exception.getMessage());
-    }
-    @ExceptionHandler(TransactionFailedException.class)
-        public ResponseEntity<String> handleTransactionFailedException(TransactionFailedException transactionFailedException){
-        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(transactionFailedException.getMessage());
     }
 }

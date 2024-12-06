@@ -2,11 +2,8 @@ package com.infy.retail.perkspal.controller;
 
 import com.infy.retail.perkspal.dto.LoyaltyRewardResponse;
 import com.infy.retail.perkspal.exceptions.InvalidInputException;
-import com.infy.retail.perkspal.exceptions.PerksPalException;
 import com.infy.retail.perkspal.service.RewardService;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,11 +27,10 @@ public class RewardController {
      *
      * @param id the ID of the customer whose rewards are to be retrieved
      * @return a ResponseEntity containing the LoyaltyRewardResponse with the rewards information
-     * @throws PerksPalException if there is an error retrieving the rewards
      * @author Satyarth Sharma
      */
     @GetMapping("/calculate/all/{id}")
-    public ResponseEntity<LoyaltyRewardResponse> getTotalRewards(@PathVariable Long id) throws PerksPalException {
+    public ResponseEntity<LoyaltyRewardResponse> getTotalRewards(@PathVariable Long id) {
         LoyaltyRewardResponse loyaltyRewardResponse = rewardService.getAllRewards(id);
         return ResponseEntity.ok(loyaltyRewardResponse);
     }

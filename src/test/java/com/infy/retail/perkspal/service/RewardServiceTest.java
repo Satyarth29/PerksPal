@@ -2,7 +2,6 @@ package com.infy.retail.perkspal.service;
 
 import com.infy.retail.perkspal.dto.CustomerPointsRecord;
 import com.infy.retail.perkspal.dto.LoyaltyRewardResponse;
-import com.infy.retail.perkspal.exceptions.PerksPalException;
 import com.infy.retail.perkspal.models.Customer;
 import com.infy.retail.perkspal.models.RetailTransaction;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,7 +44,7 @@ class RewardServiceTest {
 
     // Positive test case for getRewardsPerMonth
     @Test
-    void getRewardsInRangePerMonth_success() throws PerksPalException {
+    void getRewardsInRangePerMonth_success() {
         // Arrange
         Map<String,Integer> totalRewardsMap = new HashMap<>();
         totalRewardsMap.put(LocalDate.of(2024, Month.JANUARY, 12).toString(),130);
@@ -78,7 +77,7 @@ class RewardServiceTest {
 
     // Positive test case for getAllRewards
     @Test
-    void getAllRewards_success() throws PerksPalException {
+    void getAllRewards_success() {
         // Arrange
 
         when(customerService.findById(customerId)).thenReturn(Optional.ofNullable(customer));

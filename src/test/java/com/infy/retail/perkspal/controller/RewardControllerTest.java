@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.infy.retail.perkspal.dto.LoyaltyRewardResponse;
 import com.infy.retail.perkspal.exceptions.InvalidInputException;
 import com.infy.retail.perkspal.exceptionhandler.GlobalExceptionHandler;
-import com.infy.retail.perkspal.exceptions.RewardsCalculationException;
 import com.infy.retail.perkspal.service.RewardService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -76,8 +75,8 @@ class RewardControllerTest {
         // Act & Assert
         mockMvc.perform(get("/api/rewards/calculate/range/{id}", customerId)
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isInternalServerError())
-                .andExpect(content().string("ID cannot be null or zero"));
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Invalid input: ID cannot be null or zero"));
 
         verify(rewardService, times(1)).getRewardsInRange(customerId,LocalDate.now().minusMonths(3),LocalDate.now());
     }
@@ -93,7 +92,7 @@ class RewardControllerTest {
             mockMvc.perform(get(BASE_URL + id)
                             .param("startDate", startDate)
                             .param("endDate", endDate))
-                    .andExpect(status().isInternalServerError())
+                    .andExpect(status().isBadRequest())
                     .andExpect(result -> assertTrue(result.getResolvedException() instanceof InvalidInputException))
                     .andExpect(result -> assertEquals(
                             "Start date cannot be earlier than " + LocalDate.now().minusYears(20),
@@ -110,7 +109,7 @@ class RewardControllerTest {
             mockMvc.perform(get(BASE_URL + id)
                             .param("startDate", startDate)
                             .param("endDate", endDate))
-                    .andExpect(status().isInternalServerError())
+                    .andExpect(status().isBadRequest())
                     .andExpect(result -> assertTrue(result.getResolvedException() instanceof InvalidInputException))
                     .andExpect(result -> assertEquals(
                             "Dates cannot be in the future",
@@ -127,7 +126,7 @@ class RewardControllerTest {
             mockMvc.perform(get(BASE_URL + id)
                             .param("startDate", startDate)
                             .param("endDate", endDate))
-                    .andExpect(status().isInternalServerError())
+                    .andExpect(status().isBadRequest())
                     .andExpect(result -> assertTrue(result.getResolvedException() instanceof InvalidInputException))
                     .andExpect(result -> assertEquals(
                             "End date cannot be before start date",
@@ -144,7 +143,7 @@ class RewardControllerTest {
             mockMvc.perform(get(BASE_URL + id)
                             .param("startDate", startDate)
                             .param("endDate", endDate))
-                    .andExpect(status().isInternalServerError())
+                    .andExpect(status().isBadRequest())
                     .andExpect(result -> assertTrue(result.getResolvedException() instanceof InvalidInputException))
                     .andExpect(result -> assertEquals(
                             "ID cannot be null or zero",
@@ -172,7 +171,7 @@ class RewardControllerTest {
     @Test
     void getTotalRewards_exception() throws Exception {
         // Arrange
-        when(rewardService.getAllRewards(customerId)).thenThrow(new RewardsCalculationException("Unable to calculate total rewards",new RuntimeException()));
+        when(rewardService.getAllRewards(customerId)).thenThrow(new RuntimeException("Unable to calculate total rewards"));
 
         // Act & Assert
         mockMvc.perform(get("/api/rewards/calculate/all/{id}", customerId)

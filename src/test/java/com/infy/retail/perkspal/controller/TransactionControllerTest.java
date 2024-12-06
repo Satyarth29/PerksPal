@@ -2,8 +2,6 @@ package com.infy.retail.perkspal.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.infy.retail.perkspal.dto.TransactionPayload;
-import com.infy.retail.perkspal.exceptions.InvalidInputException;
-import com.infy.retail.perkspal.exceptions.PerksPalException;
 import com.infy.retail.perkspal.exceptionhandler.GlobalExceptionHandler;
 import com.infy.retail.perkspal.service.TransactionService;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,8 +18,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
-
-import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
@@ -69,7 +65,7 @@ class TransactionControllerTest {
     }
 
     @Test
-    void commitTransaction_nullPrice_throwsTransactionFailedException() throws Exception {
+    void commitTransaction_nullPrice_throwsExceptionWhenPriceIsNull() throws Exception {
         // Arrange
         TransactionPayload transactionPayload = new TransactionPayload(1L,null);
 
@@ -77,15 +73,15 @@ class TransactionControllerTest {
         mockMvc.perform(post("/api/transaction/create")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(transactionPayload)))
-                .andExpect(status().isUnprocessableEntity())
-                .andExpect(content().string("transaction did not commit"));
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Invalid input: please provide valid ID or price "));
 
         verify(transactionService, never()).saveTransaction(transactionPayload);
     }
 
     // Negative test case: exception thrown from service layer
     @Test
-    void commitTransaction_serviceThrowsException_throwsTransactionFailedException() throws Exception {
+    void commitTransaction_throwsException_whenIdIsNull() throws Exception {
         // Arrange
         TransactionPayload transactionPayload = new TransactionPayload(null,100.0);
 
@@ -94,8 +90,8 @@ class TransactionControllerTest {
         mockMvc.perform(post("/api/transaction/create")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(transactionPayload)))
-                .andExpect(status().isUnprocessableEntity())
-                .andExpect(content().string("transaction did not commit"));
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Invalid input: please provide valid ID or price "));
 
         verify(transactionService,  never()).saveTransaction(transactionPayload);
     }

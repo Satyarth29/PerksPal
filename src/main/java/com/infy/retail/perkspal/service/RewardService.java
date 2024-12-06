@@ -2,9 +2,7 @@ package com.infy.retail.perkspal.service;
 
 import com.infy.retail.perkspal.dto.CustomerPointsRecord;
 import com.infy.retail.perkspal.dto.LoyaltyRewardResponse;
-import com.infy.retail.perkspal.exceptions.PerksPalException;
 import com.infy.retail.perkspal.exceptions.ResourceNotFoundException;
-import com.infy.retail.perkspal.exceptions.RewardsCalculationException;
 import com.infy.retail.perkspal.models.Customer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -90,26 +88,23 @@ public class RewardService {
      * DB by calculating the Rewards point by the purchase made
      * @param customer the param contains customer object
      */
-    public List<CustomerPointsRecord> generateRewards(Customer customer) throws RewardsCalculationException {
+    public List<CustomerPointsRecord> generateRewards(Customer customer) {
         log.debug("generating the rewards and building the reward DTO");
 
         return customer.getRetailTransactions().stream()
                 .map(transaction -> {
-                    try {
+
                         return new CustomerPointsRecord(
                                 transaction.getCustomer(),
                                 calculatePoints(transaction.getPrice()),
                                 transaction.getDate());
-                    } catch (Exception e) {
-                        throw new RewardsCalculationException("unable to asses the rewards",e);
-                    }
+
                 })
                 .collect(Collectors.toList());
     }
 
-    private int calculatePoints(double price) throws PerksPalException {
+    private int calculatePoints(double price) {
         log.debug("point calculation commenced");
-        try {
             int points = 0;
             if (price > 100) {
                 points += (int) ((price - 100) * 2 + 50);
@@ -118,9 +113,6 @@ public class RewardService {
             }
             log.debug("point calculation successfully completed");
             return points;
-        } catch (Exception e) {
-            throw new RewardsCalculationException("unable to asses the rewards",e);
-        }
     }
     private LoyaltyRewardResponse generateRewardsResponse(List<CustomerPointsRecord> customerPointsRecordList, Map<String, Integer> totalRewards) {
         log.debug("creating response with : {}", totalRewards);
