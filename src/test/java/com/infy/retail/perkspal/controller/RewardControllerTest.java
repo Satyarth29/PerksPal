@@ -1,9 +1,10 @@
 package com.infy.retail.perkspal.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.infy.retail.perkspal.dto.CustomerResponseDTO;
-import com.infy.retail.perkspal.exceptions.PerksPalException;
+import com.infy.retail.perkspal.dto.LoyaltyRewardResponse;
+import com.infy.retail.perkspal.exceptions.InvalidInputException;
 import com.infy.retail.perkspal.exceptionhandler.GlobalExceptionHandler;
+import com.infy.retail.perkspal.exceptions.RewardsCalculationException;
 import com.infy.retail.perkspal.service.RewardService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,10 +17,11 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
-import java.time.Month;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -37,7 +39,7 @@ class RewardControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
-    CustomerResponseDTO customerResponseDTO;
+    LoyaltyRewardResponse loyaltyRewardResponse;
     Long customerId = 1L;
 
     @BeforeEach
@@ -46,7 +48,7 @@ class RewardControllerTest {
         Map<String,Integer> totalRewardsPointsMap = new HashMap<>();
         totalRewardsPointsMap.put(LocalDate.of(2024,8,20).toString(),4);
         totalRewardsPointsMap.put(LocalDate.of(2024,11,20).toString(),4);
-        customerResponseDTO = new CustomerResponseDTO("jhonny depp",totalRewardsPointsMap);
+        loyaltyRewardResponse = new LoyaltyRewardResponse("jhonny depp",totalRewardsPointsMap);
 
     }
 
@@ -54,13 +56,13 @@ class RewardControllerTest {
     @Test
     void getRewardsInRange_success() throws Exception {
         // Arrange
-        when(rewardService.getRewardsInRange(any(), any(),any())).thenReturn(customerResponseDTO);
+        when(rewardService.getRewardsInRange(any(), any(),any())).thenReturn(loyaltyRewardResponse);
 
         // Act & Assert
         mockMvc.perform(get("/api/rewards/calculate/range/{id}", customerId)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(content().json(objectMapper.writeValueAsString(customerResponseDTO)));
+                .andExpect(content().json(objectMapper.writeValueAsString(loyaltyRewardResponse)));
 
         verify(rewardService, times(1)).getRewardsInRange(customerId,LocalDate.now().minusMonths(3),LocalDate.now());
     }
@@ -69,28 +71,99 @@ class RewardControllerTest {
     @Test
     void getRewardsInRange_exception() throws Exception {
         // Arrange
-        when(rewardService.getRewardsInRange(any(),any(),any())).thenThrow(new PerksPalException("Unable to fetch rewards"));
+        when(rewardService.getRewardsInRange(any(),any(),any())).thenThrow(new InvalidInputException("ID cannot be null or zero"));
 
         // Act & Assert
         mockMvc.perform(get("/api/rewards/calculate/range/{id}", customerId)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError())
-                .andExpect(content().string("Unable to fetch rewards"));
+                .andExpect(content().string("ID cannot be null or zero"));
 
         verify(rewardService, times(1)).getRewardsInRange(customerId,LocalDate.now().minusMonths(3),LocalDate.now());
     }
 
-    // Positive test case for getTotalRewards
+        private static final String BASE_URL = "/api/rewards/calculate/range/";
+
+        @Test
+        void testStartDateBeforeTwentyYearsAgo() throws Exception {
+            String id = "1";
+            String startDate = "1900-01-01"; // Date before 20 years
+            String endDate = LocalDate.now().toString(); // Current date
+
+            mockMvc.perform(get(BASE_URL + id)
+                            .param("startDate", startDate)
+                            .param("endDate", endDate))
+                    .andExpect(status().isInternalServerError())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof InvalidInputException))
+                    .andExpect(result -> assertEquals(
+                            "Start date cannot be earlier than " + LocalDate.now().minusYears(20),
+                            result.getResolvedException().getMessage()
+                    ));
+        }
+
+        @Test
+        void testDatesInFuture() throws Exception {
+            String id = "1";
+            String startDate = LocalDate.now().plusDays(1).toString(); // Tomorrow's date
+            String endDate = LocalDate.now().plusDays(2).toString();   // Day after tomorrow
+
+            mockMvc.perform(get(BASE_URL + id)
+                            .param("startDate", startDate)
+                            .param("endDate", endDate))
+                    .andExpect(status().isInternalServerError())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof InvalidInputException))
+                    .andExpect(result -> assertEquals(
+                            "Dates cannot be in the future",
+                            result.getResolvedException().getMessage()
+                    ));
+        }
+
+        @Test
+        void testEndDateBeforeStartDate() throws Exception {
+            String id = "1";
+            String startDate = LocalDate.now().toString(); // Current date
+            String endDate = LocalDate.now().minusDays(1).toString(); // Yesterday's date
+
+            mockMvc.perform(get(BASE_URL + id)
+                            .param("startDate", startDate)
+                            .param("endDate", endDate))
+                    .andExpect(status().isInternalServerError())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof InvalidInputException))
+                    .andExpect(result -> assertEquals(
+                            "End date cannot be before start date",
+                            result.getResolvedException().getMessage()
+                    ));
+        }
+
+        @Test
+        void testInvalidId() throws Exception {
+            String id = "0"; // Invalid ID
+            String startDate = LocalDate.now().minusMonths(1).toString();
+            String endDate = LocalDate.now().toString();
+
+            mockMvc.perform(get(BASE_URL + id)
+                            .param("startDate", startDate)
+                            .param("endDate", endDate))
+                    .andExpect(status().isInternalServerError())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof InvalidInputException))
+                    .andExpect(result -> assertEquals(
+                            "ID cannot be null or zero",
+                            result.getResolvedException().getMessage()
+                    ));
+        }
+
+
+            // Positive test case for getTotalRewards
     @Test
     void getTotalRewards_success() throws Exception {
         // stub
-        when(rewardService.getAllRewards(customerId)).thenReturn(customerResponseDTO);
+        when(rewardService.getAllRewards(customerId)).thenReturn(loyaltyRewardResponse);
 
         // Act & Assert
         mockMvc.perform(get("/api/rewards/calculate/all/{id}", customerId)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(content().json(objectMapper.writeValueAsString(customerResponseDTO)));
+                .andExpect(content().json(objectMapper.writeValueAsString(loyaltyRewardResponse)));
 
         verify(rewardService, times(1)).getAllRewards(customerId);
     }
@@ -99,7 +172,7 @@ class RewardControllerTest {
     @Test
     void getTotalRewards_exception() throws Exception {
         // Arrange
-        when(rewardService.getAllRewards(customerId)).thenThrow(new PerksPalException("Unable to calculate total rewards"));
+        when(rewardService.getAllRewards(customerId)).thenThrow(new RewardsCalculationException("Unable to calculate total rewards",new RuntimeException()));
 
         // Act & Assert
         mockMvc.perform(get("/api/rewards/calculate/all/{id}", customerId)

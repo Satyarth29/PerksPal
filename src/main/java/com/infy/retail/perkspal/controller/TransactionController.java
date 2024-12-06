@@ -1,8 +1,10 @@
 package com.infy.retail.perkspal.controller;
 
-import com.infy.retail.perkspal.dto.CustomerRequestDTO;
-import com.infy.retail.perkspal.exceptions.PerksPalException;
+import com.infy.retail.perkspal.dto.TransactionPayload;
+import com.infy.retail.perkspal.exceptions.InvalidInputException;
+import com.infy.retail.perkspal.exceptions.TransactionFailedException;
 import com.infy.retail.perkspal.service.TransactionService;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -15,24 +17,35 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/transaction")
+@Slf4j
 public class TransactionController {
     private final TransactionService transactionService;
 
     public TransactionController(TransactionService transactionService) {
         this.transactionService = transactionService;
     }
-    private final Logger transactionalControllerLogger = LoggerFactory.getLogger(TransactionController.class);
-
+    /**
+     * Handles the creation of a transaction based on the provided transaction payload.*
+     * @param transactionPayload the payload containing transaction details such as
+     *                          id and  price
+     * @return a  ResponseEntity containing a success message if the transaction
+     *         is processed successfully.
+     * @throws InvalidInputException if the payload is invalid, e.g., missing or null
+     *                                id, price.
+     * @throws TransactionFailedException if the transaction fails due to any runtime error
+     *                                     during processing.
+     *  */
     @PostMapping("/create")
-    public ResponseEntity<String> commitTransaction(@RequestBody CustomerRequestDTO customerRequestDTO) throws PerksPalException {
-        transactionalControllerLogger.info("TransactionController.commitTransaction starts with CustomerJson :{}",customerRequestDTO);
-        try {
-            if (ObjectUtils.isEmpty(customerRequestDTO.price()))
-                throw new PerksPalException("please buy to proceed!!");
-            transactionService.saveTransaction(customerRequestDTO);
-            return ResponseEntity.ok("Transaction completed successfully");
-        } catch (PerksPalException e) {
-            throw new PerksPalException(e.getMessage(),e.getCause());
-        }
+    public ResponseEntity<String> commitTransaction(@RequestBody TransactionPayload transactionPayload) throws TransactionFailedException {
+       try {
+          log.info("transaction commit started with : {}", transactionPayload);
+           if (ObjectUtils.isEmpty(transactionPayload.price()) || ObjectUtils.isEmpty(transactionPayload.id()))
+               throw new InvalidInputException("please provide valid ID or price ");
+           transactionService.saveTransaction(transactionPayload);
+           return ResponseEntity.ok("Transaction completed successfully");
+       }
+       catch (Exception exception){
+           throw new TransactionFailedException("transaction did not commit",exception);
+       }
     }
 }

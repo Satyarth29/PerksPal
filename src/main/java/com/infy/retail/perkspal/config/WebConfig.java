@@ -31,12 +31,12 @@ private final Logger webConfigLogger =  LoggerFactory.getLogger(WebConfig.class)
      */
     @PostConstruct
     public void init() {
-        webConfigLogger.trace("Webconfig.init() starts");
+        webConfigLogger.debug("Webconfig.init() starts");
         formatters = new ArrayList<>();
         for (String format : dateFormats.split(",")) {
             formatters.add(DateTimeFormatter.ofPattern(format.trim()));
         }
-        webConfigLogger.trace("Webconfig.init() ends");
+        webConfigLogger.debug("Webconfig.init() ends");
     }
     /**
      * Adds custom formatters to the FormatterRegistry.
@@ -45,9 +45,9 @@ private final Logger webConfigLogger =  LoggerFactory.getLogger(WebConfig.class)
      */
     @Override
     public void addFormatters(FormatterRegistry registry) {
-        webConfigLogger.trace("Webconfig.addFormatters() starts");
+        webConfigLogger.debug("adding formatters commenced");
         registry.addConverter(new MultiDateFormatter(formatters));
-        webConfigLogger.trace("Webconfig.addFormatters() ends");
+        webConfigLogger.debug("added formatters");
     }
 }
 

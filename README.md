@@ -1,8 +1,8 @@
 # **PerksPal**
 
-PerksPal is a rewards program application developed using Java 17 and Spring Boot. The goal of this project is to create a RESTful application with endpoints for managing customers, transactions, and rewards. The application's database will store reward information.
+PerksPal is a rewards program application developed using Java 17 and Spring Boot. The goal of this project is to create a RESTful application with endpoints for managing transactions and rewards. The application's database will store Customer and transaction information.
 
-Rewards can be retrieved using either a customer ID or by providing a range of dates along with the customer ID through two distinct APIs. The system comes preloaded with sample data. Additionally, new customers can be added using the POST API available in the project.
+Rewards can be retrieved using either a customer ID or by providing a range of dates along with the customer ID through two distinct APIs. The system comes preloaded with sample data. Additionally, new Transaction can be added using the POST API available in the project.
 
 ### Features
 
@@ -75,7 +75,7 @@ http://localhost:8080
 
 
 **_Method1_**: POST
-#### Description: Creates Transaction
+#### Description: Commits Transaction by providing the customer ID(saves the transaction into DB)
 ```
 /api/transaction/create
 ```
@@ -83,9 +83,8 @@ Request Body:
 
 ```json
 {
-    "name": "John Doe",
-    "price": 520.0,
-    "date": "2023-11-08"
+    "id": 1,
+    "price": 520.0
 }
 ```
 **_Note:_**
@@ -99,7 +98,8 @@ no need to create the transaction to test the GET methods at first since some da
 ```
 /api/rewards/calculate/range/{customerID}?startDate={startDate}&endDate={endDate}
 ```
-
+**_Note:_**
+Dates must not be more than 20 years old or dates cant be of future.
 
 **_Method3_**: **GET**
 #### Description: **gets all rewards points for a customer _**

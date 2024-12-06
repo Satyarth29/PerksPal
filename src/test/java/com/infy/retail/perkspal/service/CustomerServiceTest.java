@@ -1,6 +1,7 @@
 package com.infy.retail.perkspal.service;
 
 import com.infy.retail.perkspal.exceptions.PerksPalException;
+import com.infy.retail.perkspal.exceptions.ResourceNotFoundException;
 import com.infy.retail.perkspal.models.Customer;
 import com.infy.retail.perkspal.respository.CustomerRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +13,7 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.zip.DataFormatException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -37,32 +39,33 @@ class CustomerServiceTest {
     }
 
     @Test
-    void saveCustomer() throws PerksPalException {
+    void saveCustomer()  {
+        when(customerRepository.save(any())).thenReturn(customer);
         customerService.saveCustomer(customer);
         verify(customerRepository, times(1)).save(customer);
     }
 
     @Test
-    void findAllCustomers() throws PerksPalException {
-        when(customerRepository.findAll()).thenReturn(List.of(customer));
-        List<Customer> customerList = customerService.findAllCustomers();
-        assertEquals(List.of(customer), customerList);
+    void findByIDCustomers() {
+        when(customerRepository.findById(any())).thenReturn(Optional.ofNullable(customer));
+        Optional<Customer> customer1 = customerService.findById(1L);
+        assertEquals(customer, customer1.get());
     }
 
     @Test
     void saveCustomerException() {
         when(customerRepository.save(any(Customer.class))).thenThrow(new RuntimeException(exceptedExceptionMsg));
-        Exception exception = assertThrows(PerksPalException.class, () ->
+        Exception exception = assertThrows(RuntimeException.class, () ->
                 customerService.saveCustomer(customer)
         );
         assertEquals(exceptedExceptionMsg, exception.getMessage());
     }
 
     @Test
-    void findAllCustomerException() {
-       when(customerRepository.findAll()).thenThrow(new RuntimeException(exceptedExceptionMsg));
-       Exception exception = assertThrows(PerksPalException.class,()->
-               customerService.findAllCustomers());
+    void findByIDCustomerException() {
+       when(customerRepository.findById(any())).thenThrow(new RuntimeException(exceptedExceptionMsg));
+       Exception exception = assertThrows(RuntimeException.class,()->
+               customerService.findById(1L));
        assertEquals(exceptedExceptionMsg,exception.getMessage());
     }
 }

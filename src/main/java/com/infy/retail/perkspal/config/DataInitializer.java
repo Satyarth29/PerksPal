@@ -14,8 +14,6 @@ import org.springframework.context.annotation.Configuration;
 import java.time.LocalDate;
 import java.util.List;
 
-import static com.infy.retail.perkspal.utils.CommonUtils.calculateRewards;
-
 @Configuration
 public class DataInitializer {
     private final Logger dataInitializerLogger = LoggerFactory.getLogger(DataInitializer.class);
@@ -48,7 +46,13 @@ public class DataInitializer {
             customer2.setName("satyarth");
             customer2 = customerService.saveCustomer(customer2);
 
+            Customer customer3 = new Customer();
+            customer3.setName("madhav");
+            customer3 = customerService.saveCustomer(customer3);
 
+            Customer customer4 = new Customer();
+            customer4.setName("shree");
+            customer4 = customerService.saveCustomer(customer4);
             // Create transactions for customer 1
             RetailTransaction retailTransaction1 = new RetailTransaction();
             retailTransaction1.setDate(LocalDate.of(2024, 8, 15));
@@ -80,11 +84,8 @@ public class DataInitializer {
                     retailTransaction4
             ));
             dataInitializerLogger.debug("DataInitialization ends");
-            calculateRewards(customerService.findAllCustomers(),rewardService);
+//            rewardService.calculateRewards(customerService.findAllCustomers());
         };
     }
-
-
-
 
 }

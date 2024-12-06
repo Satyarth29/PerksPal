@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "CUSTOMER")
@@ -21,10 +20,6 @@ public class Customer {
 
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL,fetch = FetchType.EAGER)
     private List<RetailTransaction> retailTransactions;
-
-    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL,fetch = FetchType.EAGER)
-    private List<Reward> rewards;
-
     @Override
     public String toString() {
         return "Customer{" +

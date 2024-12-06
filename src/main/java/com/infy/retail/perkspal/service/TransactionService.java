@@ -1,78 +1,60 @@
 package com.infy.retail.perkspal.service;
 
-import com.infy.retail.perkspal.dto.CustomerRequestDTO;
-import com.infy.retail.perkspal.exceptions.PerksPalException;
+import com.infy.retail.perkspal.dto.TransactionPayload;
+import com.infy.retail.perkspal.exceptions.InvalidInputException;
+import com.infy.retail.perkspal.exceptions.ResourceNotFoundException;
+import com.infy.retail.perkspal.exceptions.TransactionFailedException;
 import com.infy.retail.perkspal.models.Customer;
 import com.infy.retail.perkspal.models.RetailTransaction;
 import com.infy.retail.perkspal.respository.RetailTransactionRepository;
-import jakarta.persistence.EntityManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
-import org.springframework.transaction.annotation.Transactional;
 
-
+import java.time.LocalDate;
 import java.util.List;
 
-import static com.infy.retail.perkspal.utils.CommonUtils.calculateRewards;
-
 @Service
+@Slf4j
 public class TransactionService {
-    private final EntityManager entityManager;
     private final RetailTransactionRepository transactionRepository;
-
     private final CustomerService customerService;
 
-    private final RewardService rewardService;
-
-    public TransactionService(EntityManager entityManager, RetailTransactionRepository transactionRepository, CustomerService customerService, RewardService rewardService) {
-        this.entityManager = entityManager;
+    public TransactionService(RetailTransactionRepository transactionRepository, CustomerService customerService) {
         this.transactionRepository = transactionRepository;
         this.customerService = customerService;
-        this.rewardService = rewardService;
     }
-    private final Logger transactionalServiceLogger =  LoggerFactory.getLogger(TransactionService.class);
-    /**
-     * saving customer,transaction,reward entities by invoking customerRepo,RetailTransactionRepo,RewardRepo respectively
-     * And refreshes the entity to get the saved data by eager fetching
-     * @param customerRequestDTO       the customerDTO contains
-     * @throws PerksPalException if there is an error while saving the transaction
-     */
-    @Transactional
-    public void  saveTransaction(CustomerRequestDTO customerRequestDTO) throws PerksPalException {
-        try {
-            transactionalServiceLogger.info("TransactionService.saveTransaction starts for customerDTO : {}",customerRequestDTO);
-            if(ObjectUtils.isEmpty(customerRequestDTO))
-                throw new PerksPalException("the input is empty");
-            Customer customer = new Customer();
-            customer.setName(customerRequestDTO.name());
-            customer = customerService.saveCustomer(customer);
 
+    /**
+     * saving transaction entities by invoking RetailTransactionRepo
+     *
+     * @param transactionPayload the customerDTO contains
+     */
+    public void saveTransaction(TransactionPayload transactionPayload) {
+        log.debug("committing the transaction into the DB : {}", transactionPayload);
+        try {
+            Customer customer = customerService.findById(transactionPayload.id()).orElseThrow(() -> new ResourceNotFoundException("Customer Not Found while processing transaction"));
             RetailTransaction transaction = new RetailTransaction();
-            transaction.setDate(customerRequestDTO.date());
-            transaction.setPrice(customerRequestDTO.price());
+            transaction.setDate(LocalDate.now());
+            transaction.setPrice(transactionPayload.price());
             transaction.setCustomer(customer);
             transactionRepository.save(transaction);
-            //to refresh the entity
-            entityManager.refresh(customer);
-            calculateRewards(List.of(customer), rewardService);
-        } catch (Exception e) {
-            throw new PerksPalException(e.getMessage(),e.getCause());
+            log.debug("Transaction successfully committed into the DB");
+        } catch (RuntimeException e) {
+            throw new TransactionFailedException("Transaction did not commit due to :", e);
         }
     }
+
     /**
-     * @param retailTransactionList       the retailTransactionList contains list of transactions entity to be saved in the DB
-     * @throws PerksPalException if there is an error while saving the transaction
+     * @param retailTransactionList the retailTransactionList contains list of transactions entity to be saved in the DB
      */
-    public void saveAllTransactions(List<RetailTransaction> retailTransactionList) throws PerksPalException {
+    public void saveAllTransactions(List<RetailTransaction> retailTransactionList) {
+        log.debug("committing the transaction into the DB : {}", retailTransactionList);
         try {
-            transactionalServiceLogger.info("TransactionService.saveALlTransaction starts for retailList : {}",retailTransactionList);
             transactionRepository.saveAll(retailTransactionList);
-            transactionalServiceLogger.info("TransactionService.saveALlTransaction ends");
-        }
-        catch (Exception e){
-            throw new PerksPalException(e.getMessage(),e.getCause());
+            log.debug("Transaction successfully committed into the DB");
+        } catch (RuntimeException e) {
+            throw new TransactionFailedException("Transaction did not commit due to :", e);
         }
     }
 }

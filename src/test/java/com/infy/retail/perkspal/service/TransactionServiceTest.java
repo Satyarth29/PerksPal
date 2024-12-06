@@ -1,7 +1,9 @@
 package com.infy.retail.perkspal.service;
 
-import com.infy.retail.perkspal.dto.CustomerRequestDTO;
+import com.infy.retail.perkspal.dto.TransactionPayload;
 import com.infy.retail.perkspal.exceptions.PerksPalException;
+import com.infy.retail.perkspal.exceptions.ResourceNotFoundException;
+import com.infy.retail.perkspal.exceptions.TransactionFailedException;
 import com.infy.retail.perkspal.models.Customer;
 import com.infy.retail.perkspal.models.RetailTransaction;
 import com.infy.retail.perkspal.respository.RetailTransactionRepository;
@@ -14,76 +16,98 @@ import org.mockito.MockitoAnnotations;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import static org.springframework.http.RequestEntity.post;
 
 class TransactionServiceTest {
     @Mock
     private RetailTransactionRepository transactionRepository;
     @Mock
     private CustomerService customerService;
-    @Mock
-    private EntityManager entityManager;
-    @Mock
-    private RewardService rewardService;
+
     @InjectMocks
     private TransactionService transactionService;
 
-    private CustomerRequestDTO customerRequestDTO;
+    private TransactionPayload transactionPayload;
     private Customer customer;
     private RetailTransaction transaction;
-
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        customerRequestDTO = new CustomerRequestDTO("John Doe", 120.0, LocalDate.of(2024, 11, 8));
+        transactionPayload = new TransactionPayload(1L, 120.0);
         customer = new Customer();
-        customer.setName(customerRequestDTO.name());
+        customer.setId(transactionPayload.id());
+        customer.setName("John Doe");
         transaction = new RetailTransaction();
-        transaction.setDate(customerRequestDTO.date());
-        transaction.setPrice(customerRequestDTO.price());
+        transaction.setDate(LocalDate.now());
+        transaction.setPrice(transactionPayload.price());
         transaction.setCustomer(customer);
         customer.setRetailTransactions(List.of(transaction));
     }
 
     @Test
-    public void saveTransaction_PositiveFlow() throws PerksPalException {
-        when(customerService.saveCustomer(any(Customer.class))).thenReturn(customer);
+    public void saveTransaction_PositiveFlow()  {
         when(transactionRepository.save(any(RetailTransaction.class))).thenReturn(transaction);
-        doNothing().when(entityManager).refresh(customer);  // Mock refresh
+        when(customerService.findById(any())).thenReturn(Optional.ofNullable(customer));
 
-        transactionService.saveTransaction(customerRequestDTO);
-
-        verify(customerService, times(1)).saveCustomer(any(Customer.class));  // Ensure saveCustomer was called once
+        transactionService.saveTransaction(transactionPayload);
         verify(transactionRepository, times(1)).save(any(RetailTransaction.class));  // Ensure save was called once
-        verify(entityManager, times(1)).refresh(any(Customer.class));  // Ensure refresh was called once
+        verify(customerService, times(1)).findById(any(Long.class));  // Ensure saveCustomer was called once
+
+    }
+    @Test
+    public void saveAllTransaction_PositiveFlow()  {
+        when(transactionRepository.saveAll(any(List.class))).thenReturn(List.of(transaction));
+
+        transactionService.saveAllTransactions(List.of(transaction));
+        verify(transactionRepository, times(1)).saveAll(any(List.class));  // Ensure save was called once
     }
 
     @Test
-    public void testSaveTransaction_ThrowsPerks_Pal_Exception_When_Customer_Is_Empty() {
+    public void testSaveTransaction_ThrowsPerks_Pal_Exception_When_Payload_Is_Null() {
         // Arrange
-        CustomerRequestDTO customerRequestDTO = null;
+        TransactionPayload transactionPayload = null;
 
         // Act & Assert
-        Exception exception = assertThrows(PerksPalException.class, () -> {
-            transactionService.saveTransaction(customerRequestDTO);
+        Exception exception = assertThrows(TransactionFailedException.class, () -> {
+            transactionService.saveTransaction(transactionPayload);
         });
 
         // Verify the exception message
-        assertEquals("the input is empty", exception.getMessage());
+        assertEquals("Transaction did not commit due to :", exception.getMessage());
     }
 
     @Test
-    public void saveTransaction_NegativeFlow_SaveFails() throws PerksPalException {
-        when(customerService.saveCustomer(any(Customer.class))).thenThrow(new RuntimeException("Database error"));
-        PerksPalException exception = assertThrows(PerksPalException.class, () -> {
-            transactionService.saveTransaction(customerRequestDTO);
+    public void saveAllTransaction_NegativeFlow_SaveFails()  {
+        doThrow(new RuntimeException("Transaction did not commit due to :"))
+                .when(transactionRepository).saveAll(anyList());
+
+        TransactionFailedException exception = assertThrows(TransactionFailedException.class, () -> {
+            transactionService.saveAllTransactions(List.of());
         });
-        assertEquals("Database error", exception.getMessage());
+        assertEquals("Transaction did not commit due to :", exception.getMessage());
+    }
+    @Test
+    void testSaveTransaction_ResourceNotFoundException() {
+        // Arrange
+        TransactionPayload transactionPayload = new TransactionPayload(123L, 100.0); // Example payload
+        when(customerService.findById(transactionPayload.id())).thenReturn(Optional.empty());
+
+        // Act & Assert
+        TransactionFailedException exception = assertThrows(TransactionFailedException.class, () -> {
+            transactionService.saveTransaction(transactionPayload);
+        });
+
+        // Verify the exception message
+        assertEquals("Transaction did not commit due to :", exception.getMessage());
+
+        // Verify interactions
+        verify(customerService).findById(transactionPayload.id());
+        verifyNoInteractions(transactionRepository); // Ensure repository is not called
     }
 
 

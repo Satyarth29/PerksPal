@@ -1,6 +1,7 @@
 package com.infy.retail.perkspal.controller;
 
-import com.infy.retail.perkspal.dto.CustomerResponseDTO;
+import com.infy.retail.perkspal.dto.LoyaltyRewardResponse;
+import com.infy.retail.perkspal.exceptions.InvalidInputException;
 import com.infy.retail.perkspal.exceptions.PerksPalException;
 import com.infy.retail.perkspal.service.RewardService;
 import lombok.extern.slf4j.Slf4j;
@@ -23,21 +24,19 @@ public class RewardController {
         this.rewardService = rewardService;
     }
 
-    private final Logger rewardsControllerLogger = LoggerFactory.getLogger(RewardController.class);
 
     /**
      * Retrieves the all rewards for a customer by customer ID.
      *
      * @param id the ID of the customer whose rewards are to be retrieved
-     * @return a ResponseEntity containing the CustomerResponseDTO with the rewards information
+     * @return a ResponseEntity containing the LoyaltyRewardResponse with the rewards information
      * @throws PerksPalException if there is an error retrieving the rewards
      * @author Satyarth Sharma
      */
     @GetMapping("/calculate/all/{id}")
-    public ResponseEntity<CustomerResponseDTO> getTotalRewards(@PathVariable Long id) throws PerksPalException {
-      rewardsControllerLogger.info("************* RewardController.getTotalRewards start with customerID: {} *************",id);
-        CustomerResponseDTO customerResponseDTO = rewardService.getAllRewards(id);
-        return ResponseEntity.ok(customerResponseDTO);
+    public ResponseEntity<LoyaltyRewardResponse> getTotalRewards(@PathVariable Long id) throws PerksPalException {
+        LoyaltyRewardResponse loyaltyRewardResponse = rewardService.getAllRewards(id);
+        return ResponseEntity.ok(loyaltyRewardResponse);
     }
     /**
      * Retrieves the rewards for a customer within a specified date range.
@@ -46,22 +45,42 @@ public class RewardController {
      * @param id        the ID of the customer whose rewards are to be retrieved
      * @param startDate the start date of the range (defaults to three months ago if not provided)
      * @param endDate   the end date of the range (defaults to the current date if not provided)
-     * @return a ResponseEntity containing the CustomerResponseDTO with the rewards information
-     * @throws PerksPalException if there is an error retrieving the rewards
+     * @return a ResponseEntity containing the LoyaltyRewardResponse with the rewards information
      * @author Satyarth Sharma
      */
     @GetMapping("/calculate/range/{id}")
-    public ResponseEntity<CustomerResponseDTO>
+    public ResponseEntity<LoyaltyRewardResponse>
     getRewardsInRange(@PathVariable Long id,
                       @RequestParam(defaultValue = "#{T(java.time.LocalDate).now().minusMonths(3)}")
                       LocalDate startDate,
                       @RequestParam(defaultValue = "#{T(java.time.LocalDate).now()}")
-                      LocalDate endDate) throws PerksPalException {
-        rewardsControllerLogger.info("RewardController.getRewardsInRange() starts with id: {} startDate: {} endDate:{}", id, startDate, endDate);
-        CustomerResponseDTO customerResponseDTO = rewardService.getRewardsInRange(id, startDate, endDate);
+                      LocalDate endDate) {
+        LocalDate twentyYearsAgo = LocalDate.now().minusYears(20);
+
+        validateInput(id, startDate, endDate, twentyYearsAgo);
+        LoyaltyRewardResponse loyaltyRewardResponse = rewardService.getRewardsInRange(id, startDate, endDate);
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-Custom-Message", "Congratulations! here your rewards");
-        return new ResponseEntity<>(customerResponseDTO, headers, HttpStatus.OK);
+        return new ResponseEntity<>(loyaltyRewardResponse, headers, HttpStatus.OK);
+    }
+
+    private void validateInput(Long id, LocalDate startDate, LocalDate endDate, LocalDate twentyYearsAgo) {
+        if (startDate.isBefore(twentyYearsAgo)) {
+            throw new InvalidInputException("Start date cannot be earlier than " + twentyYearsAgo);
+        }
+
+        // Validation: Dates should not be in the future
+        if (startDate.isAfter(LocalDate.now()) || endDate.isAfter(LocalDate.now())) {
+            throw new InvalidInputException("Dates cannot be in the future");
+        }
+
+        // Validation: End date should not be before start date
+        if (endDate.isBefore(startDate)) {
+            throw new InvalidInputException("End date cannot be before start date");
+        }
+        if (id == null || id == 0.0){
+            throw new InvalidInputException("ID cannot be null or zero");
+        }
     }
 
 

@@ -1,7 +1,8 @@
 package com.infy.retail.perkspal.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.infy.retail.perkspal.dto.CustomerRequestDTO;
+import com.infy.retail.perkspal.dto.TransactionPayload;
+import com.infy.retail.perkspal.exceptions.InvalidInputException;
 import com.infy.retail.perkspal.exceptions.PerksPalException;
 import com.infy.retail.perkspal.exceptionhandler.GlobalExceptionHandler;
 import com.infy.retail.perkspal.service.TransactionService;
@@ -11,12 +12,9 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.RequestBuilder;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -24,11 +22,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
@@ -53,58 +46,58 @@ class TransactionControllerTest {
     }
 
     @Test
-    void commitTransaction_successfulTransaction() throws Exception {
-        CustomerRequestDTO customerRequestDTO = new CustomerRequestDTO("samwell", 234.0, LocalDate.of(2043,12,21));
-        String json = """
-                {
-                "name":"samwell",
-                "price":234.0,
-                "date":"2043-12-21"
-                }
-                """;
-        doNothing().when(transactionService).saveTransaction(customerRequestDTO);
+    void testCommitTransaction_Success() throws Exception {
+        // Arrange: Define a valid TransactionPayload
+        TransactionPayload transactionPayload = new TransactionPayload(123L, 150.0);
 
-        // Act & Assert
+        // Convert the payload to JSON
+        String payloadJson = new ObjectMapper().writeValueAsString(transactionPayload);
+
+        // Mock service behavior
+        doNothing().when(transactionService).saveTransaction(any(TransactionPayload.class));
+
+        // Act: Perform a POST request
         mockMvc.perform(post("/api/transaction/create")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json))
+                        .content(payloadJson))
+                // Assert: Validate response
                 .andExpect(status().isOk())
                 .andExpect(content().string("Transaction completed successfully"));
 
-        verify(transactionService, times(1)).saveTransaction(customerRequestDTO);
+        // Verify that the service was called with the correct payload
+        verify(transactionService).saveTransaction(transactionPayload);
     }
 
     @Test
-    void commitTransaction_nullPrice_throwsPerksPalException() throws Exception {
+    void commitTransaction_nullPrice_throwsTransactionFailedException() throws Exception {
         // Arrange
-        CustomerRequestDTO customerRequestDTO = new CustomerRequestDTO("Satyarth",null,null);
+        TransactionPayload transactionPayload = new TransactionPayload(1L,null);
 
         // Act & Assert
         mockMvc.perform(post("/api/transaction/create")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(customerRequestDTO)))
-                .andExpect(status().isInternalServerError())
-                .andExpect(content().string("please buy to proceed!!"));
+                        .content(objectMapper.writeValueAsString(transactionPayload)))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(content().string("transaction did not commit"));
 
-        verify(transactionService, never()).saveTransaction(customerRequestDTO);
+        verify(transactionService, never()).saveTransaction(transactionPayload);
     }
 
     // Negative test case: exception thrown from service layer
     @Test
-    void commitTransaction_serviceThrowsException_throwsPerksPalException() throws Exception {
+    void commitTransaction_serviceThrowsException_throwsTransactionFailedException() throws Exception {
         // Arrange
-        CustomerRequestDTO customerRequestDTO = new CustomerRequestDTO("",100.0,null);
+        TransactionPayload transactionPayload = new TransactionPayload(null,100.0);
 
-        doThrow(new PerksPalException("Service exception")).when(transactionService).saveTransaction(customerRequestDTO);
 
         // Act & Assert
         mockMvc.perform(post("/api/transaction/create")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(customerRequestDTO)))
-                .andExpect(status().isInternalServerError())
-                .andExpect(content().string("Service exception"));
+                        .content(objectMapper.writeValueAsString(transactionPayload)))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(content().string("transaction did not commit"));
 
-        verify(transactionService, times(1)).saveTransaction(customerRequestDTO);
+        verify(transactionService,  never()).saveTransaction(transactionPayload);
     }
 
 }
