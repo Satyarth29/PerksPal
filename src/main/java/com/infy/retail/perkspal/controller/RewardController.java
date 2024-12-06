@@ -31,6 +31,9 @@ public class RewardController {
      */
     @GetMapping("/calculate/all/{id}")
     public ResponseEntity<LoyaltyRewardResponse> getTotalRewards(@PathVariable Long id) {
+        if (id == null || id == 0.0){
+            throw new InvalidInputException("ID cannot be null or zero");
+        }
         LoyaltyRewardResponse loyaltyRewardResponse = rewardService.getAllRewards(id);
         return ResponseEntity.ok(loyaltyRewardResponse);
     }
